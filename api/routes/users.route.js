@@ -8,6 +8,7 @@ module.exports = app => {
     app.post("/api/users/register", userscontrol.register);
     app.post("/api/users/login", userscontrol.login);
     app.post("/api/users/verifyloginotp", userscontrol.verifyloginotp);
+    app.post("/api/users/verifysignupotp", userscontrol.verifysignupotp);
 
     app.post("/api/users/createseller", userscontrol.createseller);
     app.get("/api/users/sellerlist", token, userscontrol.sellerlist);

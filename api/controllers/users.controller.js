@@ -27,9 +27,7 @@ var smtpConfig = {
 var transporter = nodemailer.createTransport(smtpConfig);
 var outz = '`id`, `user_id`, `user_typ`, `user_role_id`, `user_name`, `user_mname`, `user_lname`, `thumbnail`, `user_email`, `phone`, `business_name`, `business_name_slug`, `business_address`, `business_website`, `business_logo`, `tax_number`, `country_id`, `state_id`, `state`, `city`, `zip`';
 
-
 var outfields = require('md5');
-
 
 exports.uploadit = (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
@@ -39,14 +37,10 @@ exports.uploadit = (req, res) => {
   console.warn(fullUrl);
   console.warn('===============================');
   //console.warn(req); 
-
-
   //   if (req.files.thumbdp) {
-
   // }else{
   //    res.json({message:'Wrong File sent!!!'});
-  // }  
-
+  // }
 
   res.json({
     status: 1,
@@ -57,29 +51,88 @@ exports.uploadit = (req, res) => {
 };
 
 exports.register = (req, res) => {
-  const data = req.body;
-  data.user_typ = "User";
+  res.set("Access-Control-Allow-Origin", "*");
+  const data = {
+    user_typ: "User",
+    status_email: 1,
+    user_email: req.body.user_email,
+  }
+  // data.user_typ = "Seller";
+  data.status_email = 1;
+  let logintype = "manual"
+  if (req.body.loginType) {
+    logintype = req.body.loginType;
+  }
+
+  // const data = req.body;
+  // data.user_typ = "User";
   data.rand_key = helper.generateRandomString(35);
-  data.user_password = md5(data.password);
-
-  delete data.password;
-
-
+  // data.user_password = md5(data.password);
+  // delete data.password;
   data.user_id = helper.generateRandomString(6);
   db.query('INSERT INTO user_mst SET ?', data, (err, result) => {
     if (err) {
       console.error('Database query error:', err);
       res.json({ status: 0, message: "error occured", error: err });
     } else {
-
-      ////////////////////////////////
-      ////////////////////////////////
-
-      res.json({
-        status: 1,
-        message: "Data inserted successfully.",
-        lastInsertId: result.insertId
-      });
+      if (logintype === "google") {
+        res.json({
+          status: 1,
+          message: "Sign-up Successful"
+        });
+      }
+      else {
+        const OTP = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+        var text = "Dear " + data.user_email + ",<br /><br /> Your Verification Code is :" + OTP + "   <br /> <br /> Regards<br /> Whop";
+        var mailOptions = {
+          from: 'pavanhemantraopatil@gmail.com', // sender address
+          to: data.user_email, // list of receivers
+          subject: "Verify your Whop Sign-up", // Subject line
+          html: text
+        };
+        transporter.sendMail(mailOptions, function (err1, data1) {
+          
+          if (!err1) {
+            const qry1 = "update user_mst set otp='" + OTP + "' where user_email='" + data.user_email + "';";
+            
+            // result_send = {
+            //   status: 1,
+            //   message: "Data inserted successfully.",
+            //   lastInsertId: result.insertId
+            // };
+            db.query(qry1, (err2, result2) => {
+              if (err2) {
+                
+                result_send = {
+                  msg: err2,
+                  status: "ERROR in Storing OTP in DB."
+                };
+                res.json(result_send);
+              }
+              else {
+                result_send = {
+                  msg: "OTP Sent Successfully.",
+                  status: "OK"
+                };
+                
+                res.json(result_send);
+              }
+            })
+          }
+          else {
+            result_send = {
+              msg: err1,
+              status: "ERROR"
+            };
+            res.json(result_send);
+          }
+        });
+      }
+      // res.json({
+      //   status: 1,
+      //   message: "Data inserted successfully.",
+      //   lastInsertId: result.insertId
+      // });
     }
   });
 };
@@ -87,7 +140,7 @@ exports.register = (req, res) => {
 exports.login = (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
   const email = req.body.email;
- 
+
   // const pass = req.body.password;
   // var md_pass = md5(pass);
   let logintype = "manual"
@@ -96,11 +149,9 @@ exports.login = (req, res) => {
   }
   db.query("SELECT * FROM user_mst where user_email=?;", email, (err, result) => {
     if (err) {
-      console.log("err", err)
       res.json({ status: -1, message: "error occured", error: err });
     } else {
       if (result.length > 0) {
-        console.log("result", result)
         let token = jwt.sign(
           { userId: result[0].id, userTyp: result[0].user_typ, userEmail: result[0].user_email },
           __AUTHTOKEN
@@ -128,36 +179,29 @@ exports.login = (req, res) => {
           };
           transporter.sendMail(mailOptions, async function (err1, data) {
             if (!err1) {
-              console.log("err1", err1);
               const qry1 = "update user_mst set otp='" + OTP + "' where user_email='" + email + "';";
               db.query(qry1, (err2, result2) => {
                 if (err2) {
-                  console.log("err2", err2);
                   result_send = {
                     msg: err2,
                     status: "ERROR in Storing OTP in DB."
                   };
-
                   res.json(result_send);
                 }
                 else {
-                  console.log("result2", result2);
                   result_send = {
                     msg: "OTP Sent Successfully.",
                     status: "OK"
                   };
-
                   res.json(result_send);
                 }
               })
             }
             else {
-              console.log("data", data)
               result_send = {
                 msg: err1,
                 status: "ERROR"
               };
-
               res.json(result_send);
             }
           });
@@ -196,6 +240,48 @@ exports.verifyloginotp = (req, res) => {
           username: result[0].user_id,
           id: result[0].id
         });
+      }
+      else {
+        res.json({
+          status: -1,
+          message: "Invalid OTP."
+        });
+      }
+    }
+  })
+}
+
+exports.verifysignupotp = (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  
+  const email = req.body.email;
+  const otp = req.body.otp;
+  
+  db.query("select * from user_mst where user_email = '" + email + "' and otp='" + otp + "';", (err, result) => {
+    if (err) {
+      
+      res.json({ status: -1, message: "error occured", error: err });
+    } else {
+
+      if (result.length > 0) {
+        // let token = jwt.sign(
+        //   { userId: result[0].id, userTyp: result[0].user_typ, userEmail: result[0].user_email },
+        //   __AUTHTOKEN
+        // );
+        // res.json({
+        //   status: 1,
+        //   message: "Login Successful",
+        //   accessToken_enc: enc.encrypt(token),
+        //   accessToken: token,
+        //   user_typ: result[0].user_typ,
+        //   email: result[0].user_email,
+        //   username: result[0].user_id,
+        //   id: result[0].id
+        // });
+        res.json({
+          status: 1,
+          message: "Sign-up Successful",
+        })
       }
       else {
         res.json({
@@ -261,41 +347,78 @@ exports.getseller = async (req, res) => {
 // };
 
 exports.createseller = (req, res) => {
-
-  const data = req.body;
-  data.user_typ = "Seller";
+  res.set("Access-Control-Allow-Origin", "*");
+  const data = {
+    user_typ: "Seller",
+    status_email: 1,
+    user_email: req.body.user_email,
+  }
+  // data.user_typ = "Seller";
   data.status_email = 1;
-  data.user_password = md5(data.user_password);
+  let logintype = "manual"
+  if (req.body.loginType) {
+    logintype = req.body.loginType;
+  }
+  // data.user_password = md5(data.user_password);
   data.user_id = helper.generateRandomString(6);
   db.query('INSERT INTO user_mst SET ?', data, (err, result) => {
     if (err) {
       console.error('Database query error:', err);
       res.json({ status: 0, message: "error occured", error: err });
     } else {
-      const OTP = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-      var text = "Dear " + data.user_email + ",<br /><br /> Your Verification Code is :" + OTP + "   <br /> <br /> Regards<br /> Whop";
-      var mailOptions = {
-        from: 'pavanhemantraopatil@gmail.com', // sender address
-        to: data.user_email, // list of receivers
-        subject: "Verify your Whop Sign-up", // Subject line
-        html: text
-      };
-      transporter.sendMail(mailOptions, function (err, data) {
-        if (!err) {
-          result_send = {
-            status: 1,
-            message: "Data inserted successfully.",
-            lastInsertId: result.insertId
-          };
-        }
-        else {
-          result_send = {
-            msg: err,
-            status: "ERROR"
-          };
-        }
-        res.json(result_send);
-      });
+      if (logintype === "google") {
+        res.json({
+          status: 1,
+          message: "Sign-up Successful"
+        });
+      }
+      else {
+        const OTP = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+        var text = "Dear " + data.user_email + ",<br /><br /> Your Verification Code is :" + OTP + "   <br /> <br /> Regards<br /> Whop";
+        var mailOptions = {
+          from: 'pavanhemantraopatil@gmail.com', // sender address
+          to: data.user_email, // list of receivers
+          subject: "Verify your Whop Sign-up", // Subject line
+          html: text
+        };
+        transporter.sendMail(mailOptions, function (err1, data1) {
+          
+          if (!err1) {
+            const qry1 = "update user_mst set otp='" + OTP + "' where user_email='" + data.user_email + "';";
+            
+            // result_send = {
+            //   status: 1,
+            //   message: "Data inserted successfully.",
+            //   lastInsertId: result.insertId
+            // };
+            db.query(qry1, (err2, result2) => {
+              if (err2) {
+                
+                result_send = {
+                  msg: err2,
+                  status: "ERROR in Storing OTP in DB."
+                };
+                res.json(result_send);
+              }
+              else {
+                result_send = {
+                  msg: "OTP Sent Successfully.",
+                  status: "OK"
+                };
+                
+                res.json(result_send);
+              }
+            })
+          }
+          else {
+            result_send = {
+              msg: err1,
+              status: "ERROR"
+            };
+            res.json(result_send);
+          }
+        });
+      }
       // res.json({
       //   status: 1,
       //   message: "Data inserted successfully.",
