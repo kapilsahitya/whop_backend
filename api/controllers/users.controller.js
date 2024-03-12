@@ -96,9 +96,11 @@ exports.login = (req, res) => {
   }
   db.query("SELECT * FROM user_mst where user_email=?;", email, (err, result) => {
     if (err) {
+      console.log("err", err)
       res.json({ status: -1, message: "error occured", error: err });
     } else {
       if (result.length > 0) {
+        console.log("result", result)
         let token = jwt.sign(
           { userId: result[0].id, userTyp: result[0].user_typ, userEmail: result[0].user_email },
           __AUTHTOKEN
@@ -126,9 +128,11 @@ exports.login = (req, res) => {
           };
           transporter.sendMail(mailOptions, async function (err1, data) {
             if (!err1) {
+              console.log("err1", err1);
               const qry1 = "update user_mst set otp='" + OTP + "' where user_email='" + email + "';";
               db.query(qry1, (err2, result2) => {
                 if (err2) {
+                  console.log("err2", err2);
                   result_send = {
                     msg: err2,
                     status: "ERROR in Storing OTP in DB."
@@ -137,6 +141,7 @@ exports.login = (req, res) => {
                   res.json(result_send);
                 }
                 else {
+                  console.log("result2", result2);
                   result_send = {
                     msg: "OTP Sent Successfully.",
                     status: "OK"
@@ -147,6 +152,7 @@ exports.login = (req, res) => {
               })
             }
             else {
+              console.log("data", data)
               result_send = {
                 msg: err1,
                 status: "ERROR"
