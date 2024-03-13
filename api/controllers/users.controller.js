@@ -810,7 +810,6 @@ exports.getlatestuser = (req, res) => {
     })
     connection.on('error', function (err) {
       throw err;
-      return;
     });
   })
 }

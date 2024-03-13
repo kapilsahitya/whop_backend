@@ -230,6 +230,42 @@ function doQuery(conn,sql,args='') {
       res.json(out);
   };
 
+  exports.search = async (req, res) => {
+    var searchValue = req.params.searchValue;
+    const qry = `SELECT * FROM product_mst WHERE CONCAT(name,prod_tagline, short_info, prod_info, meta_title, meta_keyword, meta_description) LIKE '%${searchValue}%';`
+    
+    db.query(qry, (err, result) => {
+      if (err) {
+        res.json({ status: -1, message: "error occured", error: err });
+      } else {
+        // res.json({
+        //   status: 1,
+        //   message: "JWT Verified | User Info Fetched successfully",
+        //   data: result
+        // });
+        if (result && result.length > 0) {
+          res.json({
+            status: 1,
+            message: "Search data Fetched successfully.",
+            data: enc.encrypt_obj(result)
+          });
+        }
+        else {
+          res.json({
+            status: 0,
+            message: "No Data Found",
+            data: []
+          });
+        }
+      }
+    });
+    // console.log("searchValue", searchValue)
+    // paramz.where = ['id='+id];
+    // paramz.is_single = 1;
+    // var out = await helper.getdata(paramz);
+    // res.json(out);
+};
+
   exports.create = async (req, res) => {
       const data = req.body;
       data.created_by = req.userId;

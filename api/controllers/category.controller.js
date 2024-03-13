@@ -1,10 +1,8 @@
 const db = require("../config/db.config"); 
 const enc = require("../utils/myencrypt");  
 
- 
-
 exports.getAll = (req, res) => {
-  db.query("SELECT * from category", (err, result) => {
+  db.query("SELECT category.*, (SELECT COUNT(*) FROM product_mst WHERE product_mst.cat_id = category.id) AS count FROM category", (err, result) => {
       if (err) {
         console.log("err", err)
         res.json({ status: 0, message: "error occured", error: err });
