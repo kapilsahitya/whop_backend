@@ -12,6 +12,5 @@ module.exports = app => {
     app.get("/api/order/getAllSeller", token, Cantrler.getAllSeller); 
     app.get("/api/order/getAllUser", token, Cantrler.getAllUser); 
     
-    
-
+  
 }; 

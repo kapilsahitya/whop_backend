@@ -36,6 +36,9 @@ module.exports = app => {
     app.post("/api/users/updaterole/:id", userscontrol.updaterole);
     app.get("/api/users/deleterole/:id", userscontrol.deleterole);
 
+    app.post("/api/users/phonepe/payment", userscontrol.payment);
+    app.get("/api/users/phonepe/status/:txnId", userscontrol.status);
+
     app.post("/api/users/upload", userscontrol.uploadit);
 
     app.get("/api/users/getlatestuser", userscontrol.getlatestuser);

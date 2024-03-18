@@ -11,6 +11,4 @@ module.exports = app => {
     app.post("/api/cat/create", Catz.create);
     app.post("/api/cat/update/:id", Catz.update);
     app.get("/api/cat/delete/:id", Catz.delete);
-    
-
 }; 

@@ -70,6 +70,7 @@ function doQuery(conn,sql,args='') {
 
   exports.cart = async  (req, res) => { 
       var uid = req.userId;
+      var utype = req.userTyp;
       var subqry = `
                      ,  (SELECT name FROM product_mst WHERE id = cart.product_id) as prod_name  
                      ,  (SELECT base_price FROM product_mst WHERE id = cart.product_id) as price    
@@ -101,6 +102,7 @@ function doQuery(conn,sql,args='') {
                                     status: 1,
                                     message: "Fetching cart data.",
                                     uid: uid,
+                                    utype: utype,
                                     cart_count: result.length, 
                                     data: result,              
                                 });    
@@ -124,6 +126,7 @@ function doQuery(conn,sql,args='') {
                                 status: 1,
                                 message: "Fetching cart data.",
                                 uid: uid,
+                                utype: utype,
                                 cart_count: result.length,         
                                 data: result,         
                             });    
@@ -140,6 +143,7 @@ function doQuery(conn,sql,args='') {
                     status: 1,
                     message: "Fetching cart data.",
                     uid: uid,
+                    utype: utype,
                     cart_count: result.length,         
                     data: result,         
                 });    
@@ -191,15 +195,15 @@ function doQuery(conn,sql,args='') {
   };
   
   exports.getAllSeller = async  (req, res) => {
-        let seller_id= req.userId;
-
-       var pp  = paramz;
-
+      let seller_id= req.userId;
+      var pp  = paramz;
         let userTyp= req.userTyp;
         if(seller_id && seller_id>0 && userTyp =="Seller" ){
-            pp.where = ['seller_id='+seller_id];
+            pp.where = ['seller_id='+ seller_id];
             pp.is_single = ''; 
+            console.log("pp",pp)
             var out = await helper.getdata(pp);
+            // console.log("out", out);
             res.json(out);
           }else{
             var res={ status: 0, message: "Provide Seller Id" };

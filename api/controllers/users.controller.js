@@ -7,6 +7,9 @@ var jwt = require("jsonwebtoken");
 var md5 = require('md5');
 const nodemailer = require('nodemailer');
 const otpGenerator = require('otp-generator')
+// const { SHA256 } =  require('crypto-js');
+const crypto = require('crypto');
+const axios = require('axios');
 
 var smtpConfig = {
   // host: 'smtp.ipower.com',
@@ -91,10 +94,10 @@ exports.register = (req, res) => {
           html: text
         };
         transporter.sendMail(mailOptions, function (err1, data1) {
-          
+
           if (!err1) {
             const qry1 = "update user_mst set otp='" + OTP + "' where user_email='" + data.user_email + "';";
-            
+
             // result_send = {
             //   status: 1,
             //   message: "Data inserted successfully.",
@@ -102,7 +105,7 @@ exports.register = (req, res) => {
             // };
             db.query(qry1, (err2, result2) => {
               if (err2) {
-                
+
                 result_send = {
                   msg: err2,
                   status: "ERROR in Storing OTP in DB."
@@ -114,7 +117,7 @@ exports.register = (req, res) => {
                   msg: "OTP Sent Successfully.",
                   status: "OK"
                 };
-                
+
                 res.json(result_send);
               }
             })
@@ -253,13 +256,13 @@ exports.verifyloginotp = (req, res) => {
 
 exports.verifysignupotp = (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
-  
+
   const email = req.body.email;
   const otp = req.body.otp;
-  
+
   db.query("select * from user_mst where user_email = '" + email + "' and otp='" + otp + "';", (err, result) => {
     if (err) {
-      
+
       res.json({ status: -1, message: "error occured", error: err });
     } else {
 
@@ -382,10 +385,10 @@ exports.createseller = (req, res) => {
           html: text
         };
         transporter.sendMail(mailOptions, function (err1, data1) {
-          
+
           if (!err1) {
             const qry1 = "update user_mst set otp='" + OTP + "' where user_email='" + data.user_email + "';";
-            
+
             // result_send = {
             //   status: 1,
             //   message: "Data inserted successfully.",
@@ -393,7 +396,7 @@ exports.createseller = (req, res) => {
             // };
             db.query(qry1, (err2, result2) => {
               if (err2) {
-                
+
                 result_send = {
                   msg: err2,
                   status: "ERROR in Storing OTP in DB."
@@ -405,7 +408,7 @@ exports.createseller = (req, res) => {
                   msg: "OTP Sent Successfully.",
                   status: "OK"
                 };
-                
+
                 res.json(result_send);
               }
             })
@@ -812,4 +815,120 @@ exports.getlatestuser = (req, res) => {
       throw err;
     });
   })
+}
+
+exports.payment = (req, res) => {
+  try {
+    const { name, number, amount } = req.body;
+    const merchantTransactionId = `MID${Date.now()}`;
+    const merchantUserId = `MUID${Date.now()}`;
+    const data = {
+      "merchantId": process.env.merchantId,
+      "merchantTransactionId": merchantTransactionId,
+      "merchantUserId": merchantUserId,
+      "amount": amount * 100,
+      "redirectUrl": `http://localhost:3000/api/users/phonepe/status/${merchantTransactionId}`,
+      "redirectMode": "REDIRECT",
+      // "callbackUrl": "http://localhost:3000/api/users/phonepe/status",
+      "mobileNumber": number,
+      "paymentInstrument": {
+        "type": "PAY_PAGE"
+      },
+      "name": name
+    }
+
+    const payload = JSON.stringify(data);
+    const payloadMain = Buffer.from(payload).toString("base64");
+    // const key = process.env.salt_key;
+    // const keyIndex = process.env.keyIndex;
+    const string = payloadMain + "/pg/v1/pay" + process.env.salt_key;
+    const sha256 = crypto.createHash('sha256').update(string).digest('hex');
+    const checksum = sha256 + "###" + process.env.keyIndex;
+
+    const URL = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay" // tesing URL
+    // const URL = "https://api.phonepe.com/apis/hermes" // Live Prod URL
+    const options = {
+      method: "POST",
+      url: URL,
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+        "X-VERIFY": checksum
+      },
+      data: {
+        request: payloadMain
+      }
+    };
+    axios
+      .request(options)
+      .then(async function (response) {
+        console.log("response", response.data);
+        // return res.status(200).send(response.data.data.instrumentResponse.redirectInfo.url)
+        await res.json({
+          status: 1,
+          message: "Processing Payment",
+          url: response.data.data.instrumentResponse.redirectInfo.url
+        });
+        // return res.redirect(response.data.data.instrumentResponse.redirectInfo.url)
+      })
+      .catch(function (error) {
+        console.error(error);
+      });
+  }
+  catch (error) {
+    res.json({
+      status: -1,
+      message: error.message,
+    });
+  }
+}
+
+//Payment Status
+exports.status = (req, res) => {
+  console.log("req", req.params)
+  const merchantTransactionId = req.params.txnId;
+  // const key = "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399";
+  // const keyIndex = 1;
+
+  // const payload = JSON.stringify(data);
+  // const payloadMain = Buffer.from(payload).toString("base64");
+  const string = `/pg/v1/status/PGTESTPAYUAT/${merchantTransactionId}` + process.env.salt_key;
+  // const sha256 = SHA256(string).toString(enc.Hex);
+  const sha256 = crypto.createHash('sha256').update(string).digest('hex');
+  const checksum = sha256 + "###" + process.env.keyIndex;
+
+  //SHA256(“/pg/v1/status/{merchantId}/{merchantTransactionId}” + saltKey) + “###” + saltIndex
+  // const xverify = SHA256(`/pg/v1/status/PGTESTPAYUAT/${merchantTransactionId}` + key) + "###" + keyIndex;
+  const options = {
+    method: 'get',
+    url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/PGTESTPAYUAT/${merchantTransactionId}`,
+    headers: {
+      accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-MERCHANT-ID': 'PGTESTPAYUAT',
+      'X-VERIFY': checksum
+    },
+
+  };
+  axios
+    .request(options)
+    .then(function (response) {
+      console.log(response.data);
+      if(response.data.success === true)
+      {
+        res.send({
+          status : 1,
+          message : "transaction Done",
+          tId : response.data.data.transactionId
+        })
+      }
+    })
+    .catch(function (error) {
+      console.error(error);
+      res.send({
+        status : -1,
+        message : "transaction Failed",
+        tId : error.message
+      })
+    });
 }
