@@ -6,10 +6,7 @@ const enc = require("../utils/myencrypt");
 
 module.exports = {
 
-
   ////////////////////////*****************CRUD CODE----------------------
-
-
 
   getdata: function (params) {
     return new Promise(function (resolve, reject) {
@@ -112,7 +109,6 @@ module.exports = {
     })
   },
 
-
   adddata: function (params) {
     return new Promise(function (resolve, reject) {
       if (!params.tableName || !params.input_columns) {
@@ -160,7 +156,6 @@ module.exports = {
     })
   },
 
-
   deldata: function (params) {
     return new Promise(function (resolve, reject) {
       if (!params.tableName || !params.del_id) {
@@ -206,17 +201,7 @@ module.exports = {
     })
   },
 
-
-
-
-
-
-
-
   ////////////////////////*****************CRUX CODE----------------------
-
-
-
 
   getsingledata: function (params) {
     return new Promise(function (resolve, reject) {
@@ -286,15 +271,6 @@ module.exports = {
     })
   },
 
-
-
-
-
-
-
-
-
-
   decodeBase64Image: function (dataString) {
     var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
       response = {};
@@ -351,7 +327,6 @@ module.exports = {
     }
     return result;
   },
-
 
   clacualate_basic: function async(t_id, ctc) {
     var mm = this.blanker_two();

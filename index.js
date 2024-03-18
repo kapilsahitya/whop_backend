@@ -27,8 +27,6 @@ PATHS.forEach( ( module ) => {
   }
 } );
 /// End------------------------------------------------
- 
-
 
 app.get('/', (req, res) => {
     res.status(201).json({
@@ -37,9 +35,6 @@ app.get('/', (req, res) => {
          
     });
 });
-
-
- 
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -58,9 +53,6 @@ app.get('/', (req, res) => {
         },
       });
     };
-
-
-
 
     app.use('/uploads', express.static('uploads'));
     app.use(express.json()); // Add this line to parse JSON in the request body
@@ -85,11 +77,5 @@ app.get('/', (req, res) => {
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
-
- 
-
-
-
-
 
 app.listen(port, () => console.log(`App listening on port ${port}!`));

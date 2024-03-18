@@ -2,9 +2,7 @@ const db = require("../config/db.config");
 const pool = require("../config/db.config");
 const enc = require("../utils/myencrypt");  
 const helper = require("../utils/myfunction");  
-var jwt = require("jsonwebtoken");  
-
-
+var jwt = require("jsonwebtoken");
 
 var outz = ' `id`, `prod_code`, `cat_id`, `seller_id`, `name`, `base_price`, `prod_tagline`, `short_info`, `prod_info`, `thumbnail`, `meta_title`, `meta_keyword`, `meta_description`';
 var paramz = {
@@ -12,8 +10,7 @@ var paramz = {
           columns:outz,
           where:[' 1 '],
           input_columns: [ 'prod_code', 'cat_id',  'name', 'prod_tagline', 'prod_info', 'thumbnail', 'meta_title', 'meta_keyword', 'meta_description'],
-          required_input_columns:['prod_code','cat_id', 'name', 'prod_tagline', 'prod_info', 'thumbnail'],
-          
+          required_input_columns:['prod_code','cat_id', 'name', 'prod_tagline', 'prod_info', 'thumbnail'],      
   };
 
 var c_outz = ' `id`, `refId`, `user_id`, `product_id`, `quantity`';
@@ -35,7 +32,6 @@ function doQuery(conn,sql,args='') {
         }) 
      })
  }
-
 
   exports.purchase = async  (req, res) => { 
       var uid = req.userId;
@@ -151,6 +147,7 @@ function doQuery(conn,sql,args='') {
           });
       }               
   };
+  
   //////////////////////PRODUCT APIS==================
   exports.getAll = async  (req, res) => { 
   
@@ -226,13 +223,48 @@ function doQuery(conn,sql,args='') {
       res.json(out);
   };
 
-  exports.get = async (req, res) => {
-      var id = req.params.id;
-      paramz.where = ['id='+id];
-      paramz.is_single = 1;
-      var out = await helper.getdata(paramz);
-      res.json(out);
-  };
+  // exports.get = async (req, res) => {
+  //     var id = req.params.id;
+  //     paramz.where = ['id='+id];
+  //     paramz.is_single = 1;
+  //     var out = await helper.getdata(paramz);
+  //     res.json(out);
+  // };
+
+  exports.get = async(req,res) => {
+    let productid = req.params.id;
+    console.log("productid", productid)
+    const qry1 = "select a.*, b.name as store_name, b.tagline as store_tagline, b.info as store_info,b.facebook, b.instagram, b.youtube, b.twitter, c.name as cat_name from product_mst as a, store_mst as b, category as c where a.store_id = b.id and a.cat_id = c.id and a.id = "+ productid;
+    db.query(qry1, (err,result) =>{
+      if(!err){
+        console.log("Product", result[0])
+        if(result && result.length > 0)
+        {
+          res.json({
+            status : 1,
+            message: "Product Found!",
+            data: enc.encrypt_obj(result[0]),
+            // datax: result[0],
+          })
+        }
+        else{
+          res.json({
+            status : 1,
+            message: "No Producy Found with this id.",
+            data:[],
+            // datax:[]
+          })
+        }
+      }
+      else{
+        console.log("err", err)
+        res.json({
+          status: -1,
+          message:"Error in fetching product."
+        })
+      }
+    })
+  }
 
   exports.search = async (req, res) => {
     var searchValue = req.params.searchValue;
