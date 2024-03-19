@@ -18,12 +18,23 @@ var smtpConfig = {
   //     user: 'kapilsahitya96@gmail.com',
   //     pass: 'zkdy imke uraa ajih'
   // }
+  // host: 'smtp.gmail.com',
+  // port: 25,
+  // secure: false,
+  // auth: {
+  //   user: 'pavanhemantraopatil@gmail.com',
+  //   pass: 'gmsjlxzgumltuwaz'
+  // }
   host: 'smtp.gmail.com',
   port: 25,
   secure: false,
+  tls: {
+    rejectUnauthorized: false
+  },
   auth: {
-    user: 'pavanhemantraopatil@gmail.com',
-    pass: 'zcetasjztabggqaw'
+    user: 'd81436654@gmail.com',
+    // pass: 'Dummy@123'
+    pass:'caqo gqhq dbgu aquz'
   }
 };
 
@@ -88,7 +99,7 @@ exports.register = (req, res) => {
         const OTP = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
         var text = "Dear " + data.user_email + ",<br /><br /> Your Verification Code is :" + OTP + "   <br /> <br /> Regards<br /> Whop";
         var mailOptions = {
-          from: 'pavanhemantraopatil@gmail.com', // sender address
+          from: 'd81436654@gmail.com', // sender address
           to: data.user_email, // list of receivers
           subject: "Verify your Whop Sign-up", // Subject line
           html: text
@@ -175,13 +186,14 @@ exports.login = (req, res) => {
           const OTP = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
           var text = "Dear " + email + ",<br /><br /> Your Verification Code is :  " + OTP + " <br /> <br /> Regards<br /> Whop";
           var mailOptions = {
-            from: 'pavanhemantraopatil@gmail.com', // sender address
+            from: 'd81436654@gmail.com', // sender address
             to: email, // list of receivers
             subject: "Verify your Whop Sign-in", // Subject line
             html: text
           };
           transporter.sendMail(mailOptions, async function (err1, data) {
             if (!err1) {
+              console.log("data" , data)
               const qry1 = "update user_mst set otp='" + OTP + "' where user_email='" + email + "';";
               db.query(qry1, (err2, result2) => {
                 if (err2) {
@@ -201,6 +213,7 @@ exports.login = (req, res) => {
               })
             }
             else {
+              console.log("err1", err1)
               result_send = {
                 msg: err1,
                 status: "ERROR"
@@ -379,7 +392,7 @@ exports.createseller = (req, res) => {
         const OTP = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
         var text = "Dear " + data.user_email + ",<br /><br /> Your Verification Code is :" + OTP + "   <br /> <br /> Regards<br /> Whop";
         var mailOptions = {
-          from: 'pavanhemantraopatil@gmail.com', // sender address
+          from: 'd81436654@gmail.com', // sender address
           to: data.user_email, // list of receivers
           subject: "Verify your Whop Sign-up", // Subject line
           html: text
