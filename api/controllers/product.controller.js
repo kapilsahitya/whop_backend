@@ -198,7 +198,7 @@ function doQuery(conn,sql,args='') {
         if(seller_id && seller_id>0 && userTyp =="Seller" ){
             pp.where = ['seller_id='+ seller_id];
             pp.is_single = ''; 
-            console.log("pp",pp)
+            // console.log("pp",pp)
             var out = await helper.getdata(pp);
             // console.log("out", out);
             res.json(out);
@@ -233,18 +233,55 @@ function doQuery(conn,sql,args='') {
 
   exports.get = async(req,res) => {
     let productid = req.params.id;
-    console.log("productid", productid)
-    const qry1 = "select a.*, b.name as store_name, b.tagline as store_tagline, b.info as store_info,b.facebook, b.instagram, b.youtube, b.twitter, c.name as cat_name from product_mst as a, store_mst as b, category as c where a.store_id = b.id and a.cat_id = c.id and a.id = "+ productid;
+    // console.log("productid", productid)
+    const qry1 = "select a.*, b.name as store_name, b.tagline as store_tagline, b.info as store_info,b.facebook, b.instagram, b.youtube, b.twitter, c.name as cat_name, d.feature_name, d.feature_icon, d.feature_details from product_mst as a, store_mst as b, category as c, features as d where a.store_id = b.id and a.cat_id = c.id and a.id = "+ productid;
     db.query(qry1, (err,result) =>{
       if(!err){
-        console.log("Product", result[0])
+        // console.log("Product", result[0])
         if(result && result.length > 0)
         {
-          res.json({
-            status : 1,
-            message: "Product Found!",
-            data: enc.encrypt_obj(result[0]),
-            // datax: result[0],
+          const storeId = result[0].store_id;
+          const featureqry = 'select * from features where store_id = '+ storeId;
+          db.query(featureqry, (err1, result1) => {
+            if(!err1)
+            {
+              let features = [];
+              if(result1.length > 0)
+              {
+                features = result1;
+              }
+              const faqquery = "select * from prod_faq where store_id =" +storeId;
+              db.query(faqquery, (err2, result2) => {
+                if(!err2)
+                {
+                  let faqs = [];
+                  if(result2.length > 0)
+                  {
+                    faqs = result2
+                  }
+                  res.json({
+                    status : 1,
+                    message: "Product Found!",
+                    products: enc.encrypt_obj(result[0]),
+                    features : enc.encrypt_obj(features),
+                    faqs : enc.encrypt_obj(faqs)
+                    // datax: result[0],
+                  })
+                }
+                else{
+                  res.json({
+                    status : -1,
+                    message : err.message
+                  })
+                }
+              })
+            }
+            else{
+              res.json({
+                status : -1,
+                message : err.message
+              })
+            }
           })
         }
         else{
